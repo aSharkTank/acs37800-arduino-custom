@@ -74,9 +74,10 @@ public:
 
   // Configures the sensor to use the specified number of samples for RMS and
   // power calculations.  Samples are taken at 32 kHz.
-  // The maximum
-  // Values of 1, 2, and 3 are treated the same as 4 by the ACS37800.
-  // A value of 0 means to take samples from one zero crossing to the next.
+  // The count should be a number between 0 and 1023.
+  // 1, 2, and 3 are treated the same as 4 by the ACS37800.
+  // 0 means to take samples from one zero crossing to the next, instead of
+  // taking a fixed number of samples.
   // This function only reads and writes from the shadow registers, not EEPROM,
   // so the settings applied will not be stored permanently.
   void setSampleCount(uint16_t count)
@@ -87,7 +88,7 @@ public:
     if (count > 1023) { count = 1023; }
 
     // Clear N and BYPASS_N_EN, then set them if necessary.
-    reg = (reg & 0xFE003FFF);
+    reg &= 0xFE003FFF;
     if (count) { reg |= (1 << 24) | (count << 14); }
 
     writeReg(0x1F, reg);
