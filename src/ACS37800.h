@@ -70,8 +70,7 @@ public:
   /// The `rsense_kohm` argument should be the Rsense value of your board, in
   /// units of kilohms, which depends on the jumper settings of your board.
   /// See the "Voltage measurement ranges" section of your board's product page
-  /// to determine the Rsense value.
-   /// Valid values are 1, 2, and 4.
+  /// to determine the Rsense value.  Valid values are 1, 2, and 4.
    void setBoardPololu(uint8_t rsense_kohm)
   {
     icodesMult = 35747;
