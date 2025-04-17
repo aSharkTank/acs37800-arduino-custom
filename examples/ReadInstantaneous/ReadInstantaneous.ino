@@ -30,6 +30,6 @@ void loop()
   Serial.print(acs.instCurrentMilliamps);
   Serial.print(F(" mA, "));
   Serial.print(acs.instPowerMilliwatts);
-  Serial.println(F(" W"));
+  Serial.println(F(" mW"));
   delay(250);
 }

@@ -103,6 +103,9 @@ public:
   /// The return value is true if the initialization completed successfully.
   bool init()
   {
+    // TODO: read some register (ACCESS_CODE?) to confirm we are talking to
+    // an ACS37800?
+
     // TODO: get current coarse gain?
     return true;
   }
@@ -129,6 +132,41 @@ public:
     writeReg(0x1F, reg);
   }
 
+  /// Reads the root mean square (RMS) voltage and current measurements from
+  /// the sensor, converts them to mV and mA respectively, and stores them in
+  /// the rmsVoltageMillivolts and rmsCurrentMilliamps members.
+  void readRMSVoltageAndCurrent()
+  {
+    uint32_t reg = readReg(0x20);
+    uint16_t vrms = (uint16_t)reg;
+    uint16_t irms = (uint16_t)(reg >> 16);
+    rmsVoltageMillivolts = (int32_t)vrms * vcodesMult >> vcodesShift >> 1;
+    rmsCurrentMilliamps = (int32_t)irms * icodesMult >> icodesShift >> 1;
+  }
+
+  /// Reads the active and reactive power from the sensor, converts both to
+  /// units of mW, and stores them in the activePowerMilliwatts and
+  /// reactivePowerMilliwatts members.
+  void readActiveAndReactivePower()
+  {
+    uint32_t reg = readReg(0x21);
+    int16_t pactive = (int16_t)reg;
+    int16_t pimag = (int16_t)(reg >> 16);
+    activePowerMilliwatts = (int32_t)pactive * pinstantMult >> pinstantShift;
+    reactivePowerMilliwatts = (int32_t)pimag * pinstantMult >> pinstantShift;
+  }
+
+  /// Reads the apparent power from the sensor and returns it in mW.
+  int32_t readApparentPowerMilliwatts()
+  {
+    // Note: maybe this function should also store the power factor and
+    // other things in register 0x22.
+    uint32_t reg = readReg(0x22);
+    uint16_t papparent = (uint16_t)reg;
+    apparentPowerMilliwatts = (int32_t)papparent * pinstantMult >> pinstantShift >> 1;
+    return apparentPowerMilliwatts;
+  }
+
   /// Reads the instantaneous voltage and current measurements from the sensor
   /// (VCODES and ICODES), converts them to mV and mA respectively, and stores
   /// them in the instVoltageMillivolts and instCurrentMilliamps members.
@@ -141,35 +179,79 @@ public:
     instCurrentMilliamps = (int32_t)icodes * icodesMult >> icodesShift;
   }
 
-  /// Reads the instantaneous voltage measurement (VCODES) from the sensor,
+  /// Reads the instananeous power measurement (PINSTANT) from the sensor
+  /// and returns its value converted to milliwatts (mW).
+  int32_t readInstPowerMilliwatts()
+  {
+    int16_t pinstant = (int16_t)readReg(0x2C);
+    instPowerMilliwatts = (int32_t)pinstant * pinstantMult >> pinstantShift;
+    return instPowerMilliwatts;
+  }
+
+  /// Reads the root mean square (RMS) voltage measurement from the sensor
+  /// and returns its value converted to millivolts (mV).
+  ///
+  /// If you need the current and the voltage, it is more efficient to use
+  /// readRMSVoltageAndCurrent() instead.
+  int32_t readRMSVoltageMillivolts()
+  {
+    readRMSVoltageAndCurrent();
+    return rmsVoltageMillivolts;
+  }
+
+  /// Reads the root mean square (RMS) current measurement from the sensor
+  /// and returns its value converted to millivolts (mV).
+  ///
+  /// If you need the current and the voltage, it is more efficient to use
+  /// readRMSVoltageAndCurrent() instead.
+  int32_t readRMSCurrentMilliamps()
+  {
+    readRMSVoltageAndCurrent();
+    return rmsCurrentMilliamps;
+  }
+
+  /// Reads the active power from the sensor and returns its value converted to
+  /// milliwatts.
+  ///
+  /// If you need the active and reactive power, it is better to use
+  /// readActiveAndReactivePower().
+  int32_t readActivePowerMilliwatts()
+  {
+    readActiveAndReactivePower();
+    return activePowerMilliwatts;
+  }
+
+  /// Reads the reactive (imaginary) power from the sensor and returns its
+  /// value converted to milliwatts.
+  ///
+  /// If you need the active and reactive power, it is better to use
+  /// readActiveAndReactivePower().
+  int32_t readReactivePowerMilliwatts()
+  {
+    readActiveAndReactivePower();
+    return reactivePowerMilliwatts;
+  }
+
+  /// Reads the instantaneous voltage measurement from the sensor,
   /// and returns its value converted to millivolts (mV).
   ///
   /// If you need the current and the voltage, it is more efficient to use
   /// readInstVoltageAndCurrent() instead.
-  int32_t readInstVoltage()
+  int32_t readInstVoltageMillivolts()
   {
     readInstVoltageAndCurrent();
     return instVoltageMillivolts;
   }
 
-  /// Reads the instantaneous current measurement (ICODES) from the sensor,
+  /// Reads the instantaneous current measurement from the sensor
   /// and returns its value converted to milliamps (mA).
   ///
   /// If you need the current and the voltage, it is more efficient to use
   /// readInstVoltageAndCurrent() instead.
-  int32_t readInstCurrent()
+  int32_t readInstCurrentMilliamps()
   {
     readInstVoltageAndCurrent();
     return instCurrentMilliamps;
-  }
-
-  /// Reads the instananeous power measurement (PINSTANT) from the sensor,
-  /// and returns its value converted to milliwatts (mW).
-  int32_t readInstPower()
-  {
-    int16_t pinstant = (int16_t)readReg(0x2C);
-    instPowerMilliwatts = (int32_t)pinstant * pinstantMult >> pinstantShift;
-    return instPowerMilliwatts;
   }
 
   /// Reads a sensor register and returns its value.
@@ -209,12 +291,16 @@ public:
   int32_t instCurrentMilliamps;
   int32_t instPowerMilliwatts;
 
+  int32_t rmsVoltageMillivolts;
+  int32_t rmsCurrentMilliamps;
+  int32_t activePowerMilliwatts;
+  int32_t reactivePowerMilliwatts;
+  int32_t apparentPowerMilliwatts;
+
 private:
   TwoWire * bus;
   uint8_t address;
 
-  /// Zero if the last communication with the device was successful, non-zero
-  /// otherwise.
   uint8_t lastError = 0;
 
   uint16_t vcodesMult = 1, icodesMult = 1, pinstantMult = 1;
