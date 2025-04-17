@@ -21,7 +21,7 @@ public:
   /// The `address` parameter specifies the 7-bit I2C address to use, and it
   /// must match the address that the Motoron is configured to use.
   ACS37800(uint8_t address = 0x60, TwoWire * bus = &Wire)
-    : bus(bus), address(address), lastError(0) {}
+    : bus(bus), address(address) {}
 
   /// Configures this object to use the specified I2C bus.
   /// The default bus is Wire, which is typically the first or only I2C bus on
@@ -64,12 +64,37 @@ public:
     return lastError;
   }
 
-  // Initializes this object.  This should be called before taking any readings.
-  // The return value is true if the initialization completed successfully.
+  /// Initializes this object.  This should be called before taking any readings.
+  /// The return value is true if the initialization completed successfully.
   bool init()
   {
     // TODO: get current coarse gain?
     return true;
+  }
+
+  /// Sets the RSense value in units of kilohms, which this library uses for
+  /// voltage and power calcutions.
+  ///
+  /// `rsense_kohm` is the resistance between VINP and VINN on your board,
+  /// in units of kilohms (1000 Ohms).
+  /// For Pololu boards, the argument should be 1, 2, or 4, depending on the
+  /// jumper settings on your board.  See the "Voltage measurement ranges"
+  /// section of your board's product page.
+  void setRSense(uint8_t rsense_kohm)
+  {
+    this->rsense_kohm = rsense_kohm;
+  }
+
+  /// Sets the current sensing range in units of A, which this library uses
+  /// for current and power calculations.
+  ///
+  /// The current sensing range is a property of the particular IC you have,
+  /// and it is specified in the ACS37800 datasheet.
+  /// By default, this library uses 30 A, which is the correct value for
+  /// Pololu boards.
+  void setCurrentSensingRange(uint8_t isense_range)
+  {
+    this->isense_range = isense_range;
   }
 
   // Configures the sensor to use the specified number of samples for RMS and
@@ -89,10 +114,23 @@ public:
 
     // Clear N and BYPASS_N_EN, then set them if necessary.
     reg &= 0xFE003FFF;
-    if (count) { reg |= (1 << 24) | (count << 14); }
+    if (count) { reg |= ((uint32_t)1 << 24) | ((uint32_t)count << 14); }
 
     writeReg(0x1F, reg);
   }
+
+  void readInst()
+  {
+    uint32_t reg = readReg(0x2A);
+    int16_t vcodes = (int16_t)reg;
+    int16_t icodes = (int16_t)(reg >> 16);
+
+    voltageMvInst = (int32_t)vcodes * (4000 + rsense_kohm) / (110 * rsense_kohm);
+
+    currentMaInst = (int32_t)icodes * isense_range * 2 / 55;
+  }
+
+  // TODO: function to read pinstant?  (product of vcodes and icodes)
 
   // Reads a sensor register and returns its value.
   uint32_t readReg(uint8_t reg)
@@ -116,11 +154,30 @@ public:
     return value;
   }
 
+  void writeReg(uint8_t reg, uint32_t value)
+  {
+    bus->beginTransmission(address);
+    bus->write(reg);
+    bus->write(value & 0xFF);
+    bus->write(value >> 8 & 0xFF);
+    bus->write(value >> 16 & 0xFF);
+    bus->write(value >> 24 & 0xFF);
+    lastError = bus->endTransmission();
+  }
+
 private:
   TwoWire * bus;
   uint8_t address;
 
   /// Zero if the last communication with the device was successful, non-zero
   /// otherwise.
-  uint8_t lastError;
+  uint8_t lastError = 0;
+
+  // Current sensing range parameter from the datasheet, in amps.
+  uint8_t isense_range = 30;
+
+  // Resistance between VINN and VINP, in kilohms.
+  uint8_t rsense_kohm = 1;
+
+  int32_t voltageMvInst;
 };
