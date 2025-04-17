@@ -64,37 +64,48 @@ public:
     return lastError;
   }
 
+  /// Configures this object to use the right calculation parameters for a
+  /// Pololu ACS37800 isolated power monitor carrier board.
+  ///
+  /// The `rsense_kohm` argument should be the Rsense value of your board, in
+  /// units of kilohms, which depends on the jumper settings of your board.
+  /// See the "Voltage measurement ranges" section of your board's product page
+  /// to determine the Rsense value.
+   /// Valid values are 1, 2, and 4.
+   void setBoardPololu(uint8_t rsense_kohm)
+  {
+    icodesMult = 35747;
+    icodesShift = 15;
+    switch (rsense_kohm)
+    {
+    case 1:
+      vcodesMult = 18623;
+      vcodesShift = 9;
+      pinstantMult = 41569;
+      pinstantShift = 5;
+      break;
+    case 2:
+      vcodesMult = 37255;
+      vcodesShift = 11;
+      pinstantMult = 41579;
+      pinstantShift = 6;
+      break;
+    default:
+    case 4:
+      vcodesMult = 18637;
+      vcodesShift = 11;
+      pinstantMult = 325;
+      pinstantShift = 0;
+      break;
+    }
+  }
+
   /// Initializes this object.  This should be called before taking any readings.
   /// The return value is true if the initialization completed successfully.
   bool init()
   {
     // TODO: get current coarse gain?
     return true;
-  }
-
-  /// Sets the RSense value in units of kilohms, which this library uses for
-  /// voltage and power calcutions.
-  ///
-  /// `rsense_kohm` is the resistance between VINP and VINN on your board,
-  /// in units of kilohms (1000 Ohms).
-  /// For Pololu boards, the argument should be 1, 2, or 4, depending on the
-  /// jumper settings on your board.  See the "Voltage measurement ranges"
-  /// section of your board's product page.
-  void setRSense(uint8_t rsense_kohm)
-  {
-    this->rsense_kohm = rsense_kohm;
-  }
-
-  /// Sets the current sensing range in units of A, which this library uses
-  /// for current and power calculations.
-  ///
-  /// The current sensing range is a property of the particular IC you have,
-  /// and it is specified in the ACS37800 datasheet.
-  /// By default, this library uses 30 A, which is the correct value for
-  /// Pololu boards.
-  void setCurrentSensingRange(uint8_t isense_range)
-  {
-    this->isense_range = isense_range;
   }
 
   // Configures the sensor to use the specified number of samples for RMS and
@@ -119,20 +130,50 @@ public:
     writeReg(0x1F, reg);
   }
 
-  void readInst()
+  /// Reads the instantaneous voltage and current measurements from the sensor
+  /// (VCODES and ICODES), converts them to mV and mA respectively, and stores
+  /// them in the instVoltageMillivolts and instCurrentMilliamps members.
+  void readInstVoltageAndCurrent()
   {
     uint32_t reg = readReg(0x2A);
     int16_t vcodes = (int16_t)reg;
     int16_t icodes = (int16_t)(reg >> 16);
-
-    voltageMvInst = (int32_t)vcodes * (4000 + rsense_kohm) / (110 * rsense_kohm);
-
-    currentMaInst = (int32_t)icodes * isense_range * 2 / 55;
+    instVoltageMillivolts = (int32_t)vcodes * vcodesMult >> vcodesShift;
+    instCurrentMilliamps = (int32_t)icodes * icodesMult >> icodesShift;
   }
 
-  // TODO: function to read pinstant?  (product of vcodes and icodes)
+  /// Reads the instantaneous voltage measurement (VCODES) from the sensor,
+  /// and returns its value converted to millivolts (mV).
+  ///
+  /// If you need the current and the voltage, it is more efficient to use
+  /// readInstVoltageAndCurrent() instead.
+  int32_t readInstVoltage()
+  {
+    readInstVoltageAndCurrent();
+    return instVoltageMillivolts;
+  }
 
-  // Reads a sensor register and returns its value.
+  /// Reads the instantaneous current measurement (ICODES) from the sensor,
+  /// and returns its value converted to milliamps (mA).
+  ///
+  /// If you need the current and the voltage, it is more efficient to use
+  /// readInstVoltageAndCurrent() instead.
+  int32_t readInstCurrent()
+  {
+    readInstVoltageAndCurrent();
+    return instCurrentMilliamps;
+  }
+
+  /// Reads the instananeous power measurement (PINSTANT) from the sensor,
+  /// and returns its value converted to milliwatts (mW).
+  int32_t readInstPower()
+  {
+    int16_t pinstant = (int16_t)readReg(0x2C);
+    instPowerMilliwatts = (int32_t)pinstant * pinstantMult >> pinstantShift;
+    return instPowerMilliwatts;
+  }
+
+  /// Reads a sensor register and returns its value.
   uint32_t readReg(uint8_t reg)
   {
     bus->beginTransmission(address);
@@ -165,6 +206,10 @@ public:
     lastError = bus->endTransmission();
   }
 
+  int32_t instVoltageMillivolts;
+  int32_t instCurrentMilliamps;
+  int32_t instPowerMilliwatts;
+
 private:
   TwoWire * bus;
   uint8_t address;
@@ -173,11 +218,6 @@ private:
   /// otherwise.
   uint8_t lastError = 0;
 
-  // Current sensing range parameter from the datasheet, in amps.
-  uint8_t isense_range = 30;
-
-  // Resistance between VINN and VINP, in kilohms.
-  uint8_t rsense_kohm = 1;
-
-  int32_t voltageMvInst;
+  uint16_t vcodesMult = 1, icodesMult = 1, pinstantMult = 1;
+  uint8_t vcodesShift = 0, icodesShift = 0, pinstantShift = 0;
 };
