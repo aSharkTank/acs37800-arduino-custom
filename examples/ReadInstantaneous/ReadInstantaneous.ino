@@ -24,7 +24,7 @@ void setup()
 void loop()
 {
   acs.readInstVoltageAndCurrent();
-  acs.readInstPower();
+  acs.readInstPowerMilliwatts();
   Serial.print(acs.instVoltageMillivolts);
   Serial.print(F(" mV, "));
   Serial.print(acs.instCurrentMilliamps);

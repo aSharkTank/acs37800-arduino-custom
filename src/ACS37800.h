@@ -103,10 +103,9 @@ public:
   /// The return value is true if the initialization completed successfully.
   bool init()
   {
-    // TODO: read some register (ACCESS_CODE?) to confirm we are talking to
-    // an ACS37800?
+    // TODO: read some register to confirm we are talking to an ACS37800?
 
-    // TODO: get current coarse gain?
+    // TODO: get or set current coarse gain?  What effect does that have?
     return true;
   }
 
@@ -254,6 +253,22 @@ public:
     return instCurrentMilliamps;
   }
 
+  /// Sets the 7-bit I2C device address of the sensor.
+  ///
+  /// The new address does not take effect until the sensor is power cycled.
+  void setI2CAddress(uint8_t address)
+  {
+    writeReg(0x2F, 0x4F70656E);  // Write the access code
+    if (lastError) { return; }
+    uint32_t reg = readReg(0x0F);
+    if (lastError) { return; }
+    reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | (address & 0x7F << 2);
+    writeReg(0x1F, reg);
+    if (lastError) { return; }
+    writeReg(0x2F, 0);  // Disable access.
+    // TODO: do we need a delay here to give it time to finish writing EEPROM?
+  }
+
   /// Reads a sensor register and returns its value.
   uint32_t readReg(uint8_t reg)
   {
@@ -276,6 +291,7 @@ public:
     return value;
   }
 
+  /// Writes to a sensor register.
   void writeReg(uint8_t reg, uint32_t value)
   {
     bus->beginTransmission(address);
