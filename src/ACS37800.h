@@ -73,21 +73,21 @@ public:
   /// to determine the Rsense value.  Valid values are 1, 2, and 4.
    void setBoardPololu(uint8_t rsense_kohm)
   {
-    icodesMult = 35747;
-    icodesShift = 15;
+    icodesMult = 17873;
+    icodesShift = 14;
     switch (rsense_kohm)
     {
     case 1:
       vcodesMult = 18623;
       vcodesShift = 9;
-      pinstantMult = 41569;
-      pinstantShift = 5;
+      pinstantMult = 1299;
+      pinstantShift = 0;
       break;
     case 2:
-      vcodesMult = 37255;
-      vcodesShift = 11;
-      pinstantMult = 41579;
-      pinstantShift = 6;
+      vcodesMult = 18627;
+      vcodesShift = 10;
+      pinstantMult = 10395;
+      pinstantShift = 4;
       break;
     default:
     case 4:
@@ -265,7 +265,7 @@ public:
     reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | (address & 0x7F << 2);
     writeReg(0x1F, reg);
     if (lastError) { return; }
-    writeReg(0x2F, 0);  // Disable access.
+    writeReg(0x2F, 0);  // Disable access.  // TODO: test that this works
     // TODO: do we need a delay here to give it time to finish writing EEPROM?
   }
 
