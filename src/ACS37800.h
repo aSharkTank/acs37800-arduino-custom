@@ -99,14 +99,13 @@ public:
     }
   }
 
-  /// Initializes this object.  This should be called before taking any readings.
-  /// The return value is true if the initialization completed successfully.
-  bool init()
+  /// This function writes a special code to the ACS37800 to unlock it, which is
+  /// a prerequisite for most other register writes.  Most users should not need
+  /// to call this function directly, because it is called by the functions
+  /// that need it.
+  void enableWriteAccess()
   {
-    // TODO: read some register to confirm we are talking to an ACS37800?
-
-    // TODO: get or set current coarse gain?  What effect does that have?
-    return true;
+    writeReg(0x2F, 0x4F70656E);  // write ACCESS_CODE
   }
 
   // Configures the sensor to use the specified number of samples for RMS and
@@ -119,6 +118,9 @@ public:
   // so the settings applied will not be stored permanently.
   void setSampleCount(uint16_t count)
   {
+    enableWriteAccess();
+    if (getLastError()) { return; }
+
     uint32_t reg = readReg(0x1F);
     if (getLastError()) { return; }
 
@@ -258,14 +260,13 @@ public:
   /// The new address does not take effect until the sensor is power cycled.
   void setI2CAddress(uint8_t address)
   {
-    writeReg(0x2F, 0x4F70656E);  // Write the access code
-    if (lastError) { return; }
+    enableWriteAccess();
+    if (getLastError()) { return; }
     uint32_t reg = readReg(0x0F);
-    if (lastError) { return; }
-    reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | (address & 0x7F << 2);
-    writeReg(0x1F, reg);
-    if (lastError) { return; }
-    writeReg(0x2F, 0);  // Disable access.  // TODO: test that this works
+    if (getLastError()) { return; }
+    reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | ((address & 0x7F) << 2);
+    writeReg(0x0F, reg);
+    if (getLastError()) { return; }
     // TODO: do we need a delay here to give it time to finish writing EEPROM?
   }
 
@@ -275,7 +276,7 @@ public:
     bus->beginTransmission(address);
     bus->write(reg);
     lastError = bus->endTransmission();
-    if (lastError) { return 0; }
+    if (getLastError()) { return 0; }
 
     uint8_t byteCount = bus->requestFrom(address, (uint8_t)4);
     if (byteCount != 4)
