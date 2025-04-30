@@ -68,12 +68,12 @@ the installation instructions above.
 ## Documentation
 
 For complete documentation of this library, see
-[the motoron-arduino documentation][doc].
+[the acs37800-arduino documentation][doc].
 If you are already on that page, then see the documentation for the ACS37800 class.
 
 ## Version history
 
-* 1.0.0 (2025-04-18): Original release.
+* 1.0.0 (2025-04-30): Original release.
 
 [cat]: https://www.pololu.com/category/343
 [releases]: https://github.com/pololu/acs37800-arduino/releases

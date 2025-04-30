@@ -15,8 +15,8 @@
 // command to do a simple scan of the bus to see which addresses have devices
 // responding.
 //
-// To assign an I2C address to a Motoron, send "a" followed by the address
-// (in decimal).  For example, "a17" sets the address of the Motoron to
+// To assign an I2C address to an ACS37800, send "a" followed by the address
+// (in decimal).  For example, "a17" sets the address of the ACS37800 to
 // decimal 17.
 //
 // To make the ACS37800 start using its new address, you need to power cycle it.

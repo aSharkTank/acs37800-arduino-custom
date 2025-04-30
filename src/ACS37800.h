@@ -19,7 +19,7 @@ public:
   /// Creates a new ACS37800 object.
   ///
   /// The `address` parameter specifies the 7-bit I2C address to use, and it
-  /// must match the address that the Motoron is configured to use.
+  /// must match the address that the ACS37800 is configured to use.
   ACS37800(uint8_t address = 0x60, TwoWire * bus = &Wire)
     : bus(bus), address(address) {}
 
