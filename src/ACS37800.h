@@ -112,8 +112,8 @@ public:
   // power calculations.  Samples are taken at 32 kHz.
   // The count should be a number between 0 and 1023.
   // 1, 2, and 3 are treated the same as 4 by the ACS37800.
-  // 0 means to take samples from one zero crossing to the next, instead of
-  // taking a fixed number of samples.
+  // 0 means to take samples from one voltage zero crossing to the next,
+  /// instead of aking a fixed number of samples.
   // This function only reads and writes from the shadow registers, not EEPROM,
   // so the settings applied will not be stored permanently.
   void setSampleCount(uint16_t count)
@@ -255,10 +255,14 @@ public:
     return instCurrentMilliamps;
   }
 
-  /// Sets the 7-bit I2C device address of the sensor.
+  /// Sets the 7-bit I2C device address of the sensor by writing it to EEPROM.
   ///
   /// The new address does not take effect until the sensor is power cycled.
-  void setI2CAddress(uint8_t address)
+  ///
+  /// After this function successfully returns, the ACS37800 will take about
+  /// 25 ms to write to EEPROM, and further communication during that time
+  /// will not succeed (register reads return 0).
+  void writeEepromI2CAddress(uint8_t address)
   {
     enableWriteAccess();
     if (getLastError()) { return; }
@@ -267,7 +271,6 @@ public:
     reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | ((address & 0x7F) << 2);
     writeReg(0x0F, reg);
     if (getLastError()) { return; }
-    // TODO: do we need a delay here to give it time to finish writing EEPROM?
   }
 
   /// Reads a sensor register and returns its value.
