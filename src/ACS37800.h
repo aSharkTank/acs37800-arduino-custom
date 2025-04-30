@@ -113,10 +113,10 @@ public:
   /// The riso parameter is the resistance between the ACS37800's VINN pin and
   /// the negative voltage sensing terminal of the board, plus the resistance
   /// between the ACS37800's VINP pin and the positive voltage sensing terminal
-  /// of the board, in Ohms.
+  /// of the board, in ohms.
   ///
   /// The rsense parameter is the resistance between the ACS37800's voltage
-  /// sensing pins, VINN and VINP, in Ohms.
+  /// sensing pins, VINN and VINP, in ohms.
   void setBoardParameters(uint8_t isense_range, uint32_t riso, uint32_t rsense)
   {
     calculateApproximation((riso + rsense) * 25, 2750 * rsense,
