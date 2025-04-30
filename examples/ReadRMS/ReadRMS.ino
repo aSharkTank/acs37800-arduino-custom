@@ -1,5 +1,5 @@
-// This example shows how to get root mean square (RMS) current and power
-// readings from the ACS37800.
+// This example shows how to get root mean square (RMS) voltage,
+// current and power readings from the ACS37800.
 
 #include <ACS37800.h>
 #include <Wire.h>
@@ -8,17 +8,13 @@ ACS37800 acs;
 
 void setup()
 {
-  Serial.begin(115200);
   Wire.begin();
   acs.setBoardPololu(4);
-  if (!acs.init())
-  {
-    while (1)
-    {
-      Serial.println(F("Failed to initialize ACS37800."));
-      delay(1000);
-    }
-  }
+
+  // RMS readings are calculating by taking voltage and current
+  // readings from some number of samples.  The sample count can
+  // be any number from 4 to 1023, or you can pass 0 to take
+  // samples from one voltage zero-crossing to the next.
   acs.setSampleCount(0);
 }
 

@@ -8,17 +8,8 @@ ACS37800 acs;
 
 void setup()
 {
-  Serial.begin(115200);
   Wire.begin();
   acs.setBoardPololu(4);
-  if (!acs.init())
-  {
-    while (1)
-    {
-      Serial.println(F("Failed to initialize ACS37800."));
-      delay(1000);
-    }
-  }
 }
 
 void loop()
