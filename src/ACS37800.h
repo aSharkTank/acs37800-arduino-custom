@@ -270,7 +270,6 @@ public:
     if (getLastError()) { return; }
     reg = (reg & ~(uint32_t)0x3FC) | (1 << 9) | ((address & 0x7F) << 2);
     writeReg(0x0F, reg);
-    if (getLastError()) { return; }
   }
 
   /// Reads a sensor register and returns its value.
