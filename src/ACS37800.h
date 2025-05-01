@@ -181,9 +181,9 @@ public:
   {
     uint32_t reg = readReg(0x21);
     int16_t pactive = (int16_t)reg;
-    int16_t pimag = (int16_t)(reg >> 16);
+    uint16_t pimag = (uint16_t)(reg >> 16);
     activePowerMilliwatts = (int32_t)pactive * pinstantMult >> pinstantShift;
-    reactivePowerMilliwatts = (int32_t)pimag * pinstantMult >> pinstantShift;
+    reactivePowerMilliwatts = (int32_t)pimag * pinstantMult >> pinstantShift >> 1;
   }
 
   /// Reads the apparent power from the sensor and returns it in mW.
