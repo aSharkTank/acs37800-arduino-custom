@@ -73,7 +73,7 @@ If you are already on that page, then see the documentation for the ACS37800 cla
 
 ## Version history
 
-* 1.0.0 (2025-04-30): Original release.
+* 1.0.0 (2025-05-01): Original release.
 
 [cat]: https://www.pololu.com/category/343
 [releases]: https://github.com/pololu/acs37800-arduino/releases
