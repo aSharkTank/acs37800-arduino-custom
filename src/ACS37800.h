@@ -27,7 +27,7 @@ public:
   /// The default bus is Wire, which is typically the first or only I2C bus on
   /// an Arduino.  To use Wire1 instead, you can write:
   /// ```{.cpp}
-  /// mc.setBus(&Wire1);
+  /// acs.setBus(&Wire1);
   /// ```
   /// \param bus A pointer to a TwoWire object representing the I2C bus to use.
   void setBus(TwoWire * bus)
@@ -119,11 +119,12 @@ public:
   /// sensing pins, VINN and VINP, in ohms.
   void setBoardParameters(uint8_t isense_range, uint32_t riso, uint32_t rsense)
   {
-    calculateApproximation((riso + rsense) * 25, 2750 * rsense,
+    calculateApproximation(riso + rsense, 110 * rsense,
       vcodesMult, vcodesShift);
-    calculateApproximation(100 * isense_range, 2750,
+    calculateApproximation(2 * isense_range, 55,
       icodesMult, icodesShift);
-    calculateApproximation(isense_range * (riso + rsense) * 5, rsense * 462,
+    calculateApproximation(
+      (uint64_t)isense_range * (riso + rsense) * 5, rsense * 462,
       pinstantMult, pinstantShift);
   }
 
@@ -349,22 +350,19 @@ public:
 
 private:
 
-  // Figures out a good approximation for (x * numerator / denominator), where
-  // x is an int16_t or uint16_t.  Approximation will be of the form x * mult >> shift.
+  // Calculates an approximation for (x * numerator / denominator), where
+  // x is an int16_t or uint16_t, of the form ((int32_t)x * mult >> shift).
   static void calculateApproximation(
     uint64_t numerator, uint64_t denominator,
     uint16_t & outputMult, uint8_t & outputShift)
   {
-    uint32_t mult_max = 0x7FFF;
-
-    // Figure out the approximation
     float k = (float)numerator / denominator;
     uint16_t mult = 0;
     uint8_t shift = 0;
     for (uint8_t shift_candidate = 0; shift_candidate < 32; shift_candidate++)
     {
-      uint32_t mult_candidate = round(k * (1 << shift_candidate));
-      if (mult_candidate > mult_max) { break; }
+      uint32_t mult_candidate = round(k * ((uint32_t)1 << shift_candidate));
+      if (mult_candidate > 0x7FFF) { break; }
       mult = mult_candidate;
       shift = shift_candidate;
     }
