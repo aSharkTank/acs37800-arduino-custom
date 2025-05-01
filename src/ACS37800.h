@@ -137,14 +137,14 @@ public:
     writeReg(0x2F, 0x4F70656E);  // write ACCESS_CODE
   }
 
-  // Configures the sensor to use the specified number of samples for RMS and
-  // power calculations.  Samples are taken at 32 kHz.
-  // The count should be a number between 0 and 1023.
-  // 1, 2, and 3 are treated the same as 4 by the ACS37800.
-  // 0 means to take samples from one voltage zero crossing to the next,
-  /// instead of aking a fixed number of samples.
-  // This function only reads and writes from the shadow registers, not EEPROM,
-  // so the settings applied will not be stored permanently.
+  /// Configures the sensor to use the specified number of samples for RMS and
+  /// power calculations.  Samples are taken at 32 kHz.
+  /// The count should be a number between 0 and 1023.
+  /// 1, 2, and 3 are treated the same as 4 by the ACS37800.
+  /// 0 means to take samples from one voltage zero crossing to the next,
+  /// instead of taking a fixed number of samples.
+  /// This function only reads and writes from the shadow registers, not EEPROM,
+  /// so the settings it applies will not be stored permanently.
   void setSampleCount(uint16_t count)
   {
     enableWriteAccess();
