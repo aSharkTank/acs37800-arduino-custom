@@ -4,16 +4,16 @@ on:
   push:
 jobs:
   ci:
-    runs-on: ubuntu
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout this repository
-      uses: actions/checkout
+      uses: actions/checkout@v2
     - name: Cache for arduino-ci
-      uses: actions/cache
+      uses: actions/cache@v2
       with:
         path: |
           ~/.arduino15
         key: ${{ runner.os }}-arduino
     - name: Install nix
-      uses: cachix/install-nix-action
+      uses: cachix/install-nix-action@v12
     - run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
