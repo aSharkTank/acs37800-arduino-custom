@@ -16,6 +16,7 @@ jobs:
         key: ${{ runner.os }}-arduino
     - name: Install nix
       uses: cachix/install-nix-action@v12
-    - name: Disable Nix sandboxing
-      run: echo "sandbox = false" | sudo tee -a /etc/nix/nix.conf
-    - run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
+    - name: Run arduino-ci
+      run: |
+        export ARDUINO_SKIP_CONTAINER=true
+        nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
