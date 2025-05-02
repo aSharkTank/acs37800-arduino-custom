@@ -14,8 +14,8 @@ jobs:
         path: |
           ~/.arduino15
         key: ${{ runner.os }}-arduino
-    - name: Disable Nix sandboxing
-      run: echo "sandbox = false" | sudo tee -a /etc/nix/nix.conf
     - name: Install nix
       uses: cachix/install-nix-action@v12
+    - name: Disable Nix sandboxing
+      run: echo "sandbox = false" | sudo tee -a /etc/nix/nix.conf
     - run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
