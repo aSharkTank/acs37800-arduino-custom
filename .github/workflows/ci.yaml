@@ -17,6 +17,4 @@ jobs:
     - name: Install nix
       uses: cachix/install-nix-action@v12
     - name: Run arduino-ci
-      run: |
-        export ARDUINO_SKIP_CONTAINER=true
-        nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
+      run: nix-shell -I nixpkgs=channel:nixpkgs-unstable -p arduino-ci --run "arduino-ci"
